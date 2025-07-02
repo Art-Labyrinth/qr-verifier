@@ -1,0 +1,17 @@
+# Dockerfile for development
+FROM node:24-alpine AS development
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+    curl \
+    git \
+    bash
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+EXPOSE 5173 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

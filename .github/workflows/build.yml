@@ -1,0 +1,125 @@
+name: QR Verifier CI/CD
+
+on:
+    push:
+        branches:
+            - main
+            - dev
+    pull_request:
+        branches:
+            - main
+
+env:
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run linter
+              run: npm run lint
+
+            - name: Run build
+              run: npm run build
+
+    build-image:
+        needs: test
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Log in to Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Extract metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=ref,event=branch
+                      type=ref,event=pr
+                      type=sha,prefix={{branch}}-
+
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  file: ./Dockerfile
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+
+    deploy-dev:
+        if: github.ref == 'refs/heads/dev'
+        needs: [test, build-image]
+        runs-on: [self-hosted]
+        # environment: development
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Deploy to Development
+              run: |
+                  make dev-stop || true
+                  make dev-build
+
+            - name: Wait for services to be ready
+              run: |
+                  sleep 30
+                  docker compose -f dev/docker-compose.yml ps
+
+            - name: Run health checks
+              run: |
+                  curl -f http://localhost:3000/health || exit 1
+
+    deploy-prod:
+        if: github.ref == 'refs/heads/main'
+        needs: [test, build-image]
+        runs-on: [self-hosted]
+        # environment: production
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Deploy to Production
+              run: |
+                  make prod-stop || true
+                  docker compose -f prod/docker-compose.yml pull
+                  make prod-build
+
+            - name: Wait for services to be ready
+              run: |
+                  sleep 30
+                  docker compose -f prod/docker-compose.yml ps
+
+            - name: Run health checks
+              run: |
+                  curl -f http://localhost/health || exit 1
+
+    cleanup:
+        if: always()
+        needs: [deploy-dev, deploy-prod]
+        runs-on: [self-hosted]
+        steps:
+            - name: Clean old Docker images
+              run: |
+                  docker image prune -f
+                  docker container prune -f

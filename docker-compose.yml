@@ -1,0 +1,25 @@
+services:
+  qr-verifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: qr-verifier-app
+    restart: unless-stopped
+    ports:
+      - 80:8080
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  nginx_logs:
+    driver: local
