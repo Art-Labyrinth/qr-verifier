@@ -9,7 +9,7 @@ services:
     container_name: qr-verifier-dev
     restart: unless-stopped
     ports:
-      - 3006:8080
+      - 127.0.0.1:3006:8080
     environment:
       - NODE_ENV=development
     volumes:

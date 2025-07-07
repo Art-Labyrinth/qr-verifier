@@ -5,11 +5,16 @@ import './App.css';
 
 function App() {
   const [isScanning, setIsScanning] = useState(false);
-  const [lastResult, setLastResult] = useState<string>('');
+  const [ticketInfo, setTicketInfo] = useState<string>('');
 
   const handleScanSuccess = (decodedText: string) => {
-    setLastResult(decodedText);
+    // setLastResult(decodedText);
+    setTicketInfo(decodedText);
     console.log('QR код отсканирован:', decodedText);
+  };
+
+  const handleStopScanning = () => {
+    setIsScanning(false);
   };
 
   const toggleScanning = () => {
@@ -17,14 +22,14 @@ function App() {
   };
 
   return (
-    <div style={{ 
-      maxWidth: '400px', 
-      margin: '0 auto', 
+    <div style={{
+      maxWidth: '400px',
+      margin: '0 auto',
       padding: '20px',
       fontFamily: 'Arial, sans-serif'
     }}>
       <h1 style={{ textAlign: 'center' }}>QR Сканер</h1>
-      
+
       <button
         onClick={toggleScanning}
         style={{
@@ -59,9 +64,10 @@ function App() {
       <QRScanner
         isActive={isScanning}
         onScanSuccess={handleScanSuccess}
+        onStopScanning={handleStopScanning}
       />
 
-      {lastResult && (
+      {ticketInfo && (
         <div style={{
           marginTop: '20px',
           padding: '15px',
@@ -69,14 +75,14 @@ function App() {
           border: '1px solid #c3e6cb',
           borderRadius: '5px'
         }}>
-          <h3 style={{ margin: '0 0 10px 0' }}>Последний результат:</h3>
-          <p style={{ 
-            margin: 0, 
+          <h3 style={{ margin: '0 0 10px 0' }}>Информация о билете:</h3>
+          <p style={{
+            margin: 0,
             wordBreak: 'break-all',
             fontFamily: 'monospace',
             fontSize: '14px'
           }}>
-            {lastResult}
+            {ticketInfo}
           </p>
         </div>
       )}
