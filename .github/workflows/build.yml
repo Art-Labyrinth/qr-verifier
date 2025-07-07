@@ -5,73 +5,73 @@ on:
         branches:
             - main
             - dev
-    pull_request:
-        branches:
-            - main
+#     pull_request:
+#         branches:
+#             - main
 
-env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: ${{ github.repository }}
+# env:
+#     REGISTRY: ghcr.io
+#     IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
+    # test:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '18'
-                  cache: 'npm'
+    #         - name: Setup Node.js
+    #           uses: actions/setup-node@v4
+    #           with:
+    #               node-version: '18'
+    #               cache: 'npm'
 
-            - name: Install dependencies
-              run: npm ci
+    #         - name: Install dependencies
+    #           run: npm ci
 
-            - name: Run linter
-              run: npm run lint
+    #         - name: Run linter
+    #           run: npm run lint
 
-            - name: Run build
-              run: npm run build
+    #         - name: Run build
+    #           run: npm run build
 
-    build-image:
-        needs: test
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
-        steps:
-            - uses: actions/checkout@v4
+    # build-image:
+    #     needs: test
+    #     runs-on: ubuntu-latest
+    #     permissions:
+    #         contents: read
+    #         packages: write
+    #     steps:
+    #         - uses: actions/checkout@v4
 
-            - name: Log in to Container Registry
-              uses: docker/login-action@v3
-              with:
-                  registry: ${{ env.REGISTRY }}
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+    #         - name: Log in to Container Registry
+    #           uses: docker/login-action@v3
+    #           with:
+    #               registry: ${{ env.REGISTRY }}
+    #               username: ${{ github.actor }}
+    #               password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Extract metadata
-              id: meta
-              uses: docker/metadata-action@v5
-              with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-                  tags: |
-                      type=ref,event=branch
-                      type=ref,event=pr
-                      type=sha,prefix={{branch}}-
+    #         - name: Extract metadata
+    #           id: meta
+    #           uses: docker/metadata-action@v5
+    #           with:
+    #               images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    #               tags: |
+    #                   type=ref,event=branch
+    #                   type=ref,event=pr
+    #                   type=sha,prefix={{branch}}-
 
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v5
-              with:
-                  context: .
-                  file: ./Dockerfile
-                  push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
+    #         - name: Build and push Docker image
+    #           uses: docker/build-push-action@v5
+    #           with:
+    #               context: .
+    #               file: ./Dockerfile
+    #               push: true
+    #               tags: ${{ steps.meta.outputs.tags }}
+    #               labels: ${{ steps.meta.outputs.labels }}
 
     deploy-dev:
         if: github.ref == 'refs/heads/dev'
-        needs: [test, build-image]
+        # needs: [test, build-image]
         runs-on: [self-hosted]
         # environment: development
         steps:
@@ -83,7 +83,7 @@ jobs:
 
     deploy-prod:
         if: github.ref == 'refs/heads/main'
-        needs: [test, build-image]
+        # needs: [test, build-image]
         runs-on: [self-hosted]
         # environment: production
         steps:

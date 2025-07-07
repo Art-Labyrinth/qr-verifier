@@ -13,7 +13,6 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - ./logs/nginx:/var/log/nginx
       - ../docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

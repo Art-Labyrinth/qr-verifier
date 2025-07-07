@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, List, Scan } from 'lucide-react';
+import { Play, Pause, List, Scan, Settings } from 'lucide-react';
 import QRScanner from './components/QRScanner';
 import QRRecordsList from './components/QRRecordsList';
 import SyncStatusComponent from './components/SyncStatus';
+import CameraDebugger from './components/CameraDebugger';
 import { db, type QRRecord } from './database/db';
 import { syncService } from './services/syncService';
 import type { Html5QrcodeResult } from 'html5-qrcode';
@@ -10,9 +11,10 @@ import './App.css';
 
 function App() {
   const [isScanning, setIsScanning] = useState(false);
-  const [currentView, setCurrentView] = useState<'scanner' | 'records'>('scanner');
+  const [currentView, setCurrentView] = useState<'scanner' | 'records' | 'debug'>('scanner');
   const [records, setRecords] = useState<QRRecord[]>([]);
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
+  const [showDebugger, setShowDebugger] = useState(false);
 
   useEffect(() => {
     // Инициализация базы данных и синхронизации
@@ -92,7 +94,7 @@ function App() {
     setIsScanning(!isScanning);
   };
 
-  const switchView = (view: 'scanner' | 'records') => {
+  const switchView = (view: 'scanner' | 'records' | 'debug') => {
     setCurrentView(view);
     if (view === 'records') {
       loadRecords(); // Обновляем записи при переключении на просмотр
@@ -121,6 +123,13 @@ function App() {
           >
             <List className="w-4 h-4" />
             Записи ({records.length})
+          </button>
+          <button
+            onClick={() => setShowDebugger(!showDebugger)}
+            className={`nav-button ${showDebugger ? 'active' : ''}`}
+          >
+            <Settings className="w-4 h-4" />
+            Отладка
           </button>
         </nav>
       </header>
@@ -174,6 +183,12 @@ function App() {
         {currentView === 'records' && (
           <div className="records-view">
             <QRRecordsList records={records} />
+          </div>
+        )}
+
+        {showDebugger && (
+          <div className="debug-view">
+            <CameraDebugger />
           </div>
         )}
       </main>

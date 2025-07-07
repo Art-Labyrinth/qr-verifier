@@ -27,14 +27,14 @@ const QRScanner: React.FC<QRScannerProps> = ({
         throw new Error('Camera API not supported');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment', // Предпочитаем заднюю камеру
           width: { ideal: 640 },
           height: { ideal: 480 }
-        } 
+        }
       });
-      
+
       stream.getTracks().forEach(track => track.stop());
       setHasPermission(true);
       setError(null);
@@ -43,9 +43,9 @@ const QRScanner: React.FC<QRScannerProps> = ({
       const error = err as Error & { name?: string };
       console.error('Camera permission denied:', error);
       setHasPermission(false);
-      
+
       let errorMessage = 'Разрешите доступ к камере для сканирования QR кодов';
-      
+
       if (error.name === 'NotAllowedError') {
         errorMessage = 'Доступ к камере запрещен. Разрешите использование камеры в настройках браузера.';
       } else if (error.name === 'NotFoundError') {
@@ -55,14 +55,14 @@ const QRScanner: React.FC<QRScannerProps> = ({
       } else if (error.name === 'NotSupportedError' || error.message?.includes('not supported')) {
         errorMessage = 'Камера не поддерживается в этом браузере.';
       }
-      
+
       setError(errorMessage);
       return false;
     }
   }, []);
 
   const startScanner = useCallback(async () => {
-    if (scannerRef.current || isLoading) {
+    if (scannerRef.current) {
       return;
     }
 
@@ -122,7 +122,7 @@ const QRScanner: React.FC<QRScannerProps> = ({
       setIsLoading(false);
       setIsScanning(false);
     }
-  }, [onScanSuccess, onScanError, checkCameraPermission, isLoading]);
+  }, [onScanSuccess, onScanError, checkCameraPermission]);
 
   const stopScanner = useCallback(() => {
     if (scannerRef.current) {
@@ -190,7 +190,7 @@ const QRScanner: React.FC<QRScannerProps> = ({
           <AlertCircle className="w-5 h-5 text-red-500" />
           <span className="text-red-600">{error}</span>
           {hasPermission === false && (
-            <button 
+            <button
               onClick={checkCameraPermission}
               className="retry-button"
             >
