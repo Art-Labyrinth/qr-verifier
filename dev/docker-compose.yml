@@ -1,20 +1,19 @@
-version: '3.8'
+name: al-dev
 
 services:
   qr-verifier-dev:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-      target: production
+    build: ..
     container_name: qr-verifier-dev
     restart: unless-stopped
     ports:
       - 127.0.0.1:3006:8080
-    environment:
-      - NODE_ENV=development
+
     volumes:
       - ../docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
 
-volumes:
-  nginx_logs:
-    driver: local
+    networks:
+      - main
+
+networks:
+  main:
+    external: true
