@@ -50,11 +50,11 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, isActive }) => {
     <div>
       <div id="qr-reader" style={{ width: '100%' }}></div>
       {result && (
-        <div style={{ 
-          marginTop: '20px', 
-          padding: '10px', 
-          backgroundColor: '#e8f5e8', 
-          borderRadius: '5px' 
+        <div style={{
+          marginTop: '20px',
+          padding: '10px',
+          backgroundColor: '#e8f5e8',
+          borderRadius: '5px'
         }}>
           <strong>Результат:</strong> {result}
         </div>

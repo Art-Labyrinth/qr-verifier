@@ -17,14 +17,14 @@ function App() {
   };
 
   return (
-    <div style={{ 
-      maxWidth: '400px', 
-      margin: '0 auto', 
+    <div style={{
+      maxWidth: '400px',
+      margin: '0 auto',
       padding: '20px',
       fontFamily: 'Arial, sans-serif'
     }}>
       <h1 style={{ textAlign: 'center' }}>QR Сканер</h1>
-      
+
       <button
         onClick={toggleScanning}
         style={{
@@ -70,8 +70,8 @@ function App() {
           borderRadius: '5px'
         }}>
           <h3 style={{ margin: '0 0 10px 0' }}>Последний результат:</h3>
-          <p style={{ 
-            margin: 0, 
+          <p style={{
+            margin: 0,
             wordBreak: 'break-all',
             fontFamily: 'monospace',
             fontSize: '14px'
