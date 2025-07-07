@@ -61,14 +61,6 @@ make prod-stop
 - Docker Compose
 - Make (опционально, для удобства)
 
-## Здоровье контейнера
-
-Доступен health check endpoint: `/health`
-
-```bash
-curl http://localhost/health
-```
-
 ## Структура проекта
 
 ```

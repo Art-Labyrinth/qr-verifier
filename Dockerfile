@@ -35,8 +35,5 @@ RUN mkdir -p /var/log/nginx /var/cache/nginx /tmp/nginx /tmp/nginx_client_body /
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["openresty", "-g", "daemon off;"]

@@ -240,9 +240,6 @@ docker system prune -a
 # Детальные логи сборки
 docker compose build --progress=plain --no-cache
 
-# Проверка health checks
-docker compose ps
-
 # Инспектирование контейнера
 docker compose exec qr-verifier sh
 ```

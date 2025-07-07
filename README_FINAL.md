@@ -16,7 +16,6 @@
 - 🎨 **Современный адаптивный UI** с темной темой
 - 🐳 **Docker контейнеризация** с OpenResty
 - 📊 **Аналитика и статистика**
-- 🔒 **Безопасность** с health checks
 - ⚡ **Высокая производительность** с кэшированием
 - 🛠️ **Подробное логирование** и мониторинг
 
@@ -26,7 +25,6 @@
 - **Docker права доступа** - исправлена проблема с правами пользователя в контейнере
 - **CSS синтаксис** - устранены ошибки в стилях, мешавшие сборке
 - **Конфигурация Nginx** - оптимизирована для работы с PWA
-- **Health checks** - добавлены проверки состояния приложения
 
 ### 🚀 Новые возможности:
 - **Полноценная PWA поддержка** с Service Worker и Workbox
@@ -183,7 +181,6 @@ cd prod && docker compose up -d
 
 # Доступные сервисы:
 # - Frontend: http://localhost (порт 80)
-# - Health Check: http://localhost/health
 # - Service Worker: http://localhost/sw.js
 # - PWA Manifest: http://localhost/manifest.webmanifest
 
@@ -268,10 +265,6 @@ const validateQRCode = (qrCode: string): boolean => {
    - Отключены опасные заголовки
    - Настроено сжатие GZIP
    - Оптимизированные таймауты
-
-4. **Health Checks** ✅
-   - Встроенные проверки состояния
-   - Автоматический перезапуск при сбоях
 
 ### Дополнительные рекомендации
 
@@ -382,9 +375,6 @@ docker build --no-cache -t qr-verifier:latest .
 ### Проверка работоспособности
 
 ```bash
-# Проверить статус приложения
-curl -s http://localhost/health
-
 # Проверить доступность PWA файлов
 curl -s -o /dev/null -w "%{http_code}" http://localhost/sw.js
 curl -s -o /dev/null -w "%{http_code}" http://localhost/manifest.webmanifest
@@ -439,7 +429,6 @@ MIT License - см. [LICENSE](./LICENSE) файл.
 - **Базовая функциональность**: Сканирование и валидация QR кодов
 - **PWA поддержка**: Service Worker, манифест, офлайн режим
 - **Docker контейнеризация**: Production-ready образ с OpenResty
-- **Безопасность**: Непривилегированный запуск, health checks
 - **CI/CD готовность**: Структура для автоматизации развертывания
 - **Документация**: Полная техническая документация
 

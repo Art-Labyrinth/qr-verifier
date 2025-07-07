@@ -1,17 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { apiService } from '../services/api';
+import type { TicketInfo } from '../types/auth';
 
 interface QRScannerProps {
-  onScanSuccess: (decodedText: string) => void;
+  onScanSuccess: (decodedText: string, ticketInfo?: TicketInfo) => void;
   onStopScanning: () => void;
   isActive: boolean;
 }
-
-// Функция для получения информации о билете с сервера
-const getTicketInfo = async (ticketCode: string) => {
-  // TODO: Здесь будет запрос к серверу
-  console.log('Получение информации о билете:', ticketCode);
-};
 
 const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, isActive }) => {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
@@ -38,8 +34,14 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
   // Отправка кода на обработку
   const submitTicketCode = useCallback(async (code: string) => {
     setResult(code);
-    onScanSuccess(code);
-    await getTicketInfo(code);
+
+    try {
+      const ticketInfo = await apiService.getTicketInfo(code);
+      onScanSuccess(code, ticketInfo);
+    } catch (error) {
+      console.error('Ошибка получения информации о билете:', error);
+      onScanSuccess(code);
+    }
 
     // Останавливаем сканирование после успешного сканирования
     if (isActive) {
