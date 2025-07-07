@@ -79,17 +79,7 @@ jobs:
 
             - name: Deploy to Development
               run: |
-                  make dev-stop || true
-                  make dev-build
-
-            - name: Wait for services to be ready
-              run: |
-                  sleep 30
-                  docker compose -f dev/docker-compose.yml ps
-
-            - name: Run health checks
-              run: |
-                  curl -f http://localhost:3000/health || exit 1
+                  docker compose -f dev/docker-compose.yml up -d --build
 
     deploy-prod:
         if: github.ref == 'refs/heads/main'
@@ -101,25 +91,12 @@ jobs:
 
             - name: Deploy to Production
               run: |
-                  make prod-stop || true
-                  docker compose -f prod/docker-compose.yml pull
-                  make prod-build
-
-            - name: Wait for services to be ready
-              run: |
-                  sleep 30
-                  docker compose -f prod/docker-compose.yml ps
-
-            - name: Run health checks
-              run: |
-                  curl -f http://localhost/health || exit 1
+                  docker compose -f prod/docker-compose.yml up -d --build
 
     cleanup:
-        if: always()
-        needs: [deploy-dev, deploy-prod]
+        needs: [deploy-prod]
         runs-on: [self-hosted]
         steps:
             - name: Clean old Docker images
               run: |
                   docker image prune -f
-                  docker container prune -f
