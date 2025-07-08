@@ -96,67 +96,83 @@ function App() {
       <h1 style={{ textAlign: 'center' }}>QR Сканер</h1>
 
       {/* Статус синхронизации */}
-      <SyncStatus />
+      {!isScanning && <SyncStatus />}
 
       {/* Панель авторизации */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '20px',
-        padding: '10px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '5px',
-        border: '1px solid #dee2e6'
-      }}>
-        {user ? (
-          <>
-            <span style={{ fontSize: '14px' }}>
-              Привет, <strong>{user.username}</strong>
-            </span>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <LogOut size={16} />
-              Выйти
-            </button>
-          </>
-        ) : (
-          <>
-            <span style={{ fontSize: '14px', color: '#6c757d' }}>
-              Не авторизован
-            </span>
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <LogIn size={16} />
-              Войти
-            </button>
-          </>
-        )}
-      </div>
+      {!isScanning && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '10px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '5px',
+          border: '1px solid #dee2e6'
+        }}>
+          {user ? (
+            <>
+              <span style={{ fontSize: '14px' }}>
+                Привет, <strong>{user.username}</strong>
+              </span>
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <LogOut size={16} />
+                Выйти
+              </button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '14px', color: '#6c757d' }}>
+                Не авторизован
+              </span>
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <LogIn size={16} />
+                Войти
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Отладочная информация (временно) */}
+      {!isScanning && (
+        <div style={{
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffeaa7',
+          borderRadius: '5px',
+          padding: '10px',
+          marginBottom: '10px',
+          fontSize: '12px'
+        }}>
+          <strong>DEBUG:</strong> Билетов в локальной БД: {syncService.getLocalTicketsCount()}
+        </div>
+      )}
 
       {/* Кнопка сканирования */}
       <button

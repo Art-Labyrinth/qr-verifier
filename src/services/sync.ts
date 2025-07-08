@@ -10,6 +10,14 @@ class SyncService {
     lastSync: null
   };
 
+  constructor() {
+    // Восстанавливаем время последней синхронизации при инициализации
+    const savedLastSync = localStorage.getItem('last_sync_timestamp');
+    if (savedLastSync) {
+      this.serverStatus.lastSync = savedLastSync;
+    }
+  }
+
   // Генерация уникального ID устройства
   private getDeviceId(): string {
     let deviceId = localStorage.getItem('device_id');
@@ -26,9 +34,14 @@ class SyncService {
   }
 
   // Сохранение времени последней синхронизации
-  private setLastSyncTimestamp(timestamp: string) {
-    localStorage.setItem('last_sync_timestamp', timestamp);
-    this.serverStatus.lastSync = timestamp;
+  private setLastSyncTimestamp() {
+    // Всегда используем текущее локальное время
+    const localTimestamp = new Date().toISOString();
+
+    localStorage.setItem('last_sync_timestamp', localTimestamp);
+    this.serverStatus.lastSync = localTimestamp;
+
+    console.log(`Время синхронизации сохранено: ${localTimestamp}`);
   }
 
   // Получение операций ожидающих синхронизации
@@ -42,15 +55,43 @@ class SyncService {
     localStorage.setItem('pending_operations', JSON.stringify(operations));
   }
 
-  // Получение локальной базы билетов
+  // Получение локальной базы билетов с проверкой доступности
   private getLocalTickets(): ServerTicket[] {
-    const tickets = localStorage.getItem('local_tickets');
-    return tickets ? JSON.parse(tickets) : [];
+    try {
+      const tickets = localStorage.getItem('local_tickets');
+      if (!tickets) {
+        console.log('Локальная база билетов пуста');
+        return [];
+      }
+
+      const parsed = JSON.parse(tickets);
+      console.log(`Загружено ${parsed.length} билетов из локальной базы`);
+      return parsed;
+    } catch (error) {
+      console.error('Ошибка чтения локальной базы билетов:', error);
+      return [];
+    }
   }
 
-  // Сохранение локальной базы билетов
+  // Сохранение локальной базы билетов с проверкой
   private setLocalTickets(tickets: ServerTicket[]) {
-    localStorage.setItem('local_tickets', JSON.stringify(tickets));
+    try {
+      const data = JSON.stringify(tickets);
+      localStorage.setItem('local_tickets', data);
+
+      // Проверяем, что данные действительно сохранились
+      const saved = localStorage.getItem('local_tickets');
+      if (!saved) {
+        console.error('Не удалось сохранить билеты в localStorage');
+        return false;
+      }
+
+      console.log(`Сохранено ${tickets.length} билетов в локальную базу`);
+      return true;
+    } catch (error) {
+      console.error('Ошибка сохранения в локальную базу:', error);
+      return false;
+    }
   }
 
   // Обновление локальной базы билетов из updates
@@ -142,7 +183,7 @@ class SyncService {
         this.setPendingOperations([]);
 
         // Обновляем время последней синхронизации
-        this.setLastSyncTimestamp(syncResponse.lastSyncTimestamp);
+        this.setLastSyncTimestamp();
 
         console.log('Синхронизация завершена успешно');
         return true;
@@ -193,8 +234,23 @@ class SyncService {
 
   // Получение билета из локальной базы
   getLocalTicket(ticketId: string): ServerTicket | null {
+    console.log(`Поиск билета в локальной базе: ${ticketId}`);
+
     const tickets = this.getLocalTickets();
-    return tickets.find(ticket => ticket.ticket_id === ticketId) || null;
+    console.log(`Доступно билетов в локальной базе: ${tickets.length}`);
+
+    const ticket = tickets.find(ticket => ticket.ticket_id === ticketId) || null;
+
+    if (ticket) {
+      console.log(`Билет найден в локальной базе: ${ticketId}`);
+    } else {
+      console.log(`Билет НЕ найден в локальной базе: ${ticketId}`);
+      // Выводим все доступные ticket_id для отладки
+      const availableIds = tickets.map(t => t.ticket_id).slice(0, 5);
+      console.log(`Первые 5 доступных ID: [${availableIds.join(', ')}]`);
+    }
+
+    return ticket;
   }
 
   // Получение всех локальных билетов
@@ -208,6 +264,88 @@ class SyncService {
   }
 
   // === МЕТОДЫ ДЛЯ ОТЛАДКИ ===
+
+  // Проверка доступности localStorage
+  debugCheckLocalStorage(): boolean {
+    try {
+      const testKey = 'test_localStorage';
+      const testValue = 'test_value';
+
+      localStorage.setItem(testKey, testValue);
+      const retrieved = localStorage.getItem(testKey);
+      localStorage.removeItem(testKey);
+
+      const isWorking = retrieved === testValue;
+      console.log(`localStorage ${isWorking ? 'работает' : 'не работает'}`);
+      return isWorking;
+    } catch (error) {
+      console.error('localStorage недоступен:', error);
+      return false;
+    }
+  }
+
+  // Получение статистики хранилища
+  debugGetStorageStats(): {
+    pendingOperations: number;
+    localTickets: number;
+    hasDeviceId: boolean;
+    hasLastSync: boolean;
+    storageSize: number;
+  } {
+    const stats = {
+      pendingOperations: this.getPendingOperationsCount(),
+      localTickets: this.getLocalTicketsCount(),
+      hasDeviceId: !!localStorage.getItem('device_id'),
+      hasLastSync: !!localStorage.getItem('last_sync_timestamp'),
+      storageSize: 0
+    };
+
+    // Подсчитываем размер данных в localStorage
+    try {
+      let totalSize = 0;
+      for (const key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+          totalSize += localStorage[key].length + key.length;
+        }
+      }
+      stats.storageSize = totalSize;
+    } catch (error) {
+      console.error('Ошибка подсчета размера хранилища:', error);
+    }
+
+    console.log('Статистика хранилища:', stats);
+    return stats;
+  }
+
+  // Принудительное сохранение тестовых данных
+  debugTestLocalStorage(): boolean {
+    const testTickets: ServerTicket[] = [
+      {
+        id: 999,
+        ticket_id: 'TEST-001',
+        name: 'Тестовый билет',
+        email: 'test@example.com',
+        phone: null,
+        is_sold: true,
+        active: true,
+        used: null,
+        comment: 'Тестовый билет для проверки',
+        created_at: new Date().toISOString(),
+        updated_at: null,
+        synced_at: new Date().toISOString()
+      }
+    ];
+
+    const success = this.setLocalTickets(testTickets);
+    if (success) {
+      const retrieved = this.getLocalTicket('TEST-001');
+      const working = !!retrieved;
+      console.log(`Тест localStorage: ${working ? 'успешно' : 'провалился'}`);
+      return working;
+    }
+
+    return false;
+  }
 
   // Очистка всех данных синхронизации
   clearAllSyncData() {
