@@ -18,10 +18,10 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
   // Преобразование ServerTicket в TicketInfo
   const convertServerTicketToTicketInfo = useCallback((serverTicket: ServerTicket): TicketInfo => {
     return {
-      code: serverTicket.ticket_id,
-      holder: serverTicket.name || 'Не указан',
+      code: serverTicket.code,
+      holder: serverTicket.holder || 'Не указан',
       email: serverTicket.email || 'Не указан',
-      status: serverTicket.used ? 'used' : (serverTicket.active ? 'valid' : 'invalid'),
+      status: serverTicket.status,
       active: serverTicket.active,
       is_sold: serverTicket.is_sold,
       used: serverTicket.used,

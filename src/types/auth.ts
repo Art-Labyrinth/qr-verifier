@@ -39,6 +39,9 @@ export interface SyncOperation {
   metadata?: {
     deviceId: string;
     userAgent: string;
+    action?: string;
+    comment?: string;
+    updates?: string;
   };
 }
 
@@ -61,22 +64,11 @@ export interface ServerStatus {
   lastSync: string | null;
 }
 
-// {
-//     "code": "M-301-5169",
-//     "holder": "Станислав Кыса",
-//     "email": "ky*******@gmail.com",
-//     "status": true,
-//     "active": true,
-//     "is_sold": true,
-//     "used": null,
-//     "comment": "",
-//     "created_at": "2025-07-02T13:37:43.680986+00:00"
-// }
 export interface TicketInfo {
   code: string;
   holder: string;
   email: string;
-  status: 'valid' | 'invalid' | 'used';
+  status: boolean;
   active: boolean;
   is_sold: boolean;
   used?: string | null;
@@ -87,15 +79,14 @@ export interface TicketInfo {
 // Тип для билета из обновлений сервера
 export interface ServerTicket {
   id: number;
-  ticket_id: string;
-  name?: string | null;
+  code: string;
+  holder?: string | null;
   email?: string | null;
-  phone?: string | null;
-  is_sold: boolean;
+  status: boolean;
   active: boolean;
+  is_sold: boolean;
   used?: string | null;
   comment: string;
   created_at: string;
-  updated_at?: string | null;
   synced_at?: string; // Добавляется при сохранении в локальную базу
 }

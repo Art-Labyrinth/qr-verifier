@@ -3,6 +3,7 @@ import { Play, Pause, LogIn, LogOut } from 'lucide-react';
 import QRScanner from './components/QRScanner';
 import LoginModal from './components/LoginModal';
 import SyncStatus from './components/SyncStatus';
+import TicketEditor from './components/TicketEditor';
 import { syncService } from './services/sync';
 import { apiService } from './services/api';
 import type { User, TicketInfo } from './types/auth';
@@ -13,6 +14,7 @@ function App() {
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [autoRegistrationMessage, setAutoRegistrationMessage] = useState<string | null>(null);
 
   // Проверяем наличие debug параметра в URL
   const isDebugMode = new URLSearchParams(window.location.search).has('debug');
@@ -54,8 +56,48 @@ function App() {
   }, []);
 
   const handleScanSuccess = (decodedText: string, ticketData?: TicketInfo) => {
-    setTicketInfo(ticketData || null);
+    let finalTicketData = ticketData;
+    let message: string | null = null;
+
+    // Если пользователь авторизован и билет найден, проверяем возможность автоматической регистрации
+    if (user && ticketData) {
+      const canAutoRegister =
+        ticketData.active &&
+        ticketData.is_sold &&
+        !ticketData.used;
+
+      if (canAutoRegister) {
+        // Автоматически отмечаем билет как использованный
+        const success = syncService.markTicketAsUsed(decodedText, '');
+        if (success) {
+          finalTicketData = {
+            ...ticketData,
+            status: false,
+            used: new Date().toISOString()
+          };
+          message = 'Билет успешно зарегистрирован!';
+        }
+      } else {
+        // Формируем сообщение о причинах невозможности автоматической регистрации
+        const reasons = [];
+        if (!ticketData.active) reasons.push('билет не активен');
+        if (!ticketData.is_sold) reasons.push('билет не оплачен');
+        if (ticketData.used) reasons.push('билет уже использован');
+
+        if (reasons.length > 0) {
+          message = 'Билет недействительный';
+        }
+      }
+    }
+
+    setTicketInfo(finalTicketData || null);
+    setAutoRegistrationMessage(message);
     console.log('QR код отсканирован:', decodedText);
+
+    // Очищаем сообщение через 5 секунд
+    // if (message) {
+    //   setTimeout(() => setAutoRegistrationMessage(null), 5000);
+    // }
 
     // Добавляем операцию в очередь синхронизации
     syncService.addOperation({
@@ -98,6 +140,10 @@ function App() {
       localStorage.clear();
       alert('Все данные очищены');
     }
+  };
+
+  const handleTicketUpdate = (updatedTicket: TicketInfo) => {
+    setTicketInfo(updatedTicket);
   };
 
   return (
@@ -236,6 +282,21 @@ function App() {
         )}
       </button>
 
+      {/* Сообщение об автоматической регистрации */}
+      {autoRegistrationMessage && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '10px',
+          backgroundColor: autoRegistrationMessage.includes('успешно') ? '#d4edda' : '#fff3cd',
+          border: `1px solid ${autoRegistrationMessage.includes('успешно') ? '#c3e6cb' : '#ffeaa7'}`,
+          borderRadius: '5px',
+          fontSize: '14px',
+          textAlign: 'center'
+        }}>
+          {autoRegistrationMessage}
+        </div>
+      )}
+
       <QRScanner
         isActive={isScanning}
         onScanSuccess={handleScanSuccess}
@@ -243,29 +304,11 @@ function App() {
       />
 
       {ticketInfo && (
-        <div style={{
-          marginTop: '20px',
-          padding: '15px',
-          // backgroundColor: '#d4edda',
-          backgroundColor: ticketInfo.status ? '#d4edda' : '#f8d7da',
-          border: '1px solid #c3e6cb',
-          borderRadius: '5px'
-        }}>
-          <h3 style={{ margin: '0 0 10px 0' }}>Информация о билете:</h3>
-          <div style={{
-            fontFamily: 'monospace',
-            fontSize: '14px'
-          }}>
-            <p><strong>Код:</strong> {ticketInfo.code}</p>
-            <p><strong>Владелец:</strong> {ticketInfo.holder}</p>
-            <p><strong>Email:</strong> {ticketInfo.email}</p>
-            <p>{`${ticketInfo.active ? "Активен" : "Не активен"}`} {ticketInfo.is_sold ? "Оплачен" : "Не оплачен"}</p>
-            {ticketInfo.used && <p><strong>Использован:</strong> {new Date(ticketInfo.used).toLocaleString()}</p>}
-            <p><strong>Комментарий:</strong> {ticketInfo.comment}</p>
-            {/* comment */}
-            <p><strong>Создан:</strong> {ticketInfo.created_at && new Date(ticketInfo.created_at).toLocaleString()}</p>
-          </div>
-        </div>
+        <TicketEditor
+          ticketInfo={ticketInfo}
+          isAuthenticated={!!user}
+          onUpdate={handleTicketUpdate}
+        />
       )}
 
       {/* Модальное окно авторизации */}
