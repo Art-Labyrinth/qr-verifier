@@ -32,8 +32,21 @@ function App() {
       }
     }
 
+    // Подписываемся на изменения авторизации
+    const handleAuthChange = (isAuthenticated: boolean) => {
+      if (!isAuthenticated) {
+        // Если пользователь больше не авторизован, очищаем его данные
+        setUser(null);
+        localStorage.removeItem('user_data');
+        console.log('Пользователь деавторизован, данные очищены');
+      }
+    };
+
+    apiService.onAuthChange(handleAuthChange);
+
     return () => {
       syncService.stopAutoSync();
+      apiService.removeAuthChangeListener(handleAuthChange);
     };
   }, []);
 
@@ -204,7 +217,7 @@ function App() {
             {ticketInfo.used && <p><strong>Использован:</strong> {new Date(ticketInfo.used).toLocaleString()}</p>}
             <p><strong>Комментарий:</strong> {ticketInfo.comment}</p>
             {/* comment */}
-            <p><strong>Создан:</strong> {new Date(ticketInfo.created_at).toLocaleString()}</p>
+            <p><strong>Создан:</strong> {ticketInfo.created_at && new Date(ticketInfo.created_at).toLocaleString()}</p>
           </div>
         </div>
       )}

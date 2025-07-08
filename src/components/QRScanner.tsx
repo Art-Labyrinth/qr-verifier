@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { apiService } from '../services/api';
-import type { TicketInfo } from '../types/auth';
+import { syncService } from '../services/sync';
+import type { TicketInfo, ServerTicket } from '../types/auth';
 
 interface QRScannerProps {
   onScanSuccess: (decodedText: string, ticketInfo?: TicketInfo) => void;
@@ -13,6 +14,21 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [result, setResult] = useState<string>('');
   const [manualCode, setManualCode] = useState<string>('');
+
+  // Преобразование ServerTicket в TicketInfo
+  const convertServerTicketToTicketInfo = useCallback((serverTicket: ServerTicket): TicketInfo => {
+    return {
+      code: serverTicket.ticket_id,
+      holder: serverTicket.name || 'Не указан',
+      email: serverTicket.email || 'Не указан',
+      status: serverTicket.used ? 'used' : (serverTicket.active ? 'valid' : 'invalid'),
+      active: serverTicket.active,
+      is_sold: serverTicket.is_sold,
+      used: serverTicket.used,
+      comment: serverTicket.comment,
+      created_at: serverTicket.created_at
+    };
+  }, []);
 
   // Функция для форматирования кода (L-NNN-NNNN)
   const formatTicketCode = (value: string) => {
@@ -36,10 +52,28 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
     setResult(code);
 
     try {
-      const ticketInfo = await apiService.getTicketInfo(code);
-      onScanSuccess(code, ticketInfo);
+      // Сначала ищем билет в локальной базе
+      const localTicket = syncService.getLocalTicket(code);
+
+      if (localTicket) {
+        // Билет найден в локальной базе
+        const ticketInfo = convertServerTicketToTicketInfo(localTicket);
+        console.log('Билет найден в локальной базе:', code);
+        onScanSuccess(code, ticketInfo);
+      } else {
+        // Билет не найден локально, обращаемся к серверу
+        console.log('Билет не найден локально, запрашиваем с сервера:', code);
+        try {
+          const ticketInfo = await apiService.getTicketInfo(code);
+          onScanSuccess(code, ticketInfo);
+        } catch (serverError) {
+          console.error('Ошибка получения информации о билете с сервера:', serverError);
+          // Отправляем код без информации о билете
+          onScanSuccess(code);
+        }
+      }
     } catch (error) {
-      console.error('Ошибка получения информации о билете:', error);
+      console.error('Ошибка при обработке билета:', error);
       onScanSuccess(code);
     }
 
@@ -47,7 +81,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
     if (isActive) {
       onStopScanning();
     }
-  }, [onScanSuccess, onStopScanning, isActive]);
+  }, [onScanSuccess, onStopScanning, isActive, convertServerTicketToTicketInfo]);
 
   // Обработка ручной отправки кода
   const handleManualSubmit = (e: React.FormEvent) => {

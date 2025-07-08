@@ -4,6 +4,7 @@ import type { LoginCredentials, LoginResponse, SyncRequest, SyncResponse, Ticket
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  private authChangeListeners: Array<(isAuthenticated: boolean) => void> = [];
 
   constructor() {
     this.baseURL = API_CONFIG.baseURL;
@@ -11,12 +12,36 @@ class ApiService {
     this.token = localStorage.getItem('auth_token');
   }
 
+  // Добавление слушателя изменений авторизации
+  onAuthChange(listener: (isAuthenticated: boolean) => void) {
+    this.authChangeListeners.push(listener);
+  }
+
+  // Удаление слушателя изменений авторизации
+  removeAuthChangeListener(listener: (isAuthenticated: boolean) => void) {
+    const index = this.authChangeListeners.indexOf(listener);
+    if (index > -1) {
+      this.authChangeListeners.splice(index, 1);
+    }
+  }
+
+  // Уведомление слушателей об изменении состояния авторизации
+  private notifyAuthChange(isAuthenticated: boolean) {
+    this.authChangeListeners.forEach(listener => listener(isAuthenticated));
+  }
+
   setToken(token: string | null) {
+    const wasAuthenticated = !!this.token;
     this.token = token;
     if (token) {
       localStorage.setItem('auth_token', token);
     } else {
       localStorage.removeItem('auth_token');
+    }
+
+    const isAuthenticated = !!token;
+    if (wasAuthenticated !== isAuthenticated) {
+      this.notifyAuthChange(isAuthenticated);
     }
   }
 
@@ -38,6 +63,9 @@ class ApiService {
     const response = await fetch(url, config);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        this.setToken(null);
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 

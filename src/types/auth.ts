@@ -76,10 +76,26 @@ export interface TicketInfo {
   code: string;
   holder: string;
   email: string;
-  status: boolean;
+  status: 'valid' | 'invalid' | 'used';
   active: boolean;
   is_sold: boolean;
   used?: string | null;
   comment?: string;
   created_at: string;
+}
+
+// Тип для билета из обновлений сервера
+export interface ServerTicket {
+  id: number;
+  ticket_id: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  is_sold: boolean;
+  active: boolean;
+  used?: string | null;
+  comment: string;
+  created_at: string;
+  updated_at?: string | null;
+  synced_at?: string; // Добавляется при сохранении в локальную базу
 }

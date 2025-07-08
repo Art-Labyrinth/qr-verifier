@@ -1,6 +1,6 @@
 import { apiService } from './api';
 import { API_CONFIG } from '../config/api';
-import type { ServerStatus, SyncOperation } from '../types/auth';
+import type { ServerStatus, SyncOperation, ServerTicket } from '../types/auth';
 
 class SyncService {
   private syncInterval: number | null = null;
@@ -40,6 +40,48 @@ class SyncService {
   // Сохранение операций ожидающих синхронизации
   private setPendingOperations(operations: SyncOperation[]) {
     localStorage.setItem('pending_operations', JSON.stringify(operations));
+  }
+
+  // Получение локальной базы билетов
+  private getLocalTickets(): ServerTicket[] {
+    const tickets = localStorage.getItem('local_tickets');
+    return tickets ? JSON.parse(tickets) : [];
+  }
+
+  // Сохранение локальной базы билетов
+  private setLocalTickets(tickets: ServerTicket[]) {
+    localStorage.setItem('local_tickets', JSON.stringify(tickets));
+  }
+
+  // Обновление локальной базы билетов из updates
+  private updateLocalTickets(updates: Record<string, unknown>[]) {
+    if (!updates || updates.length === 0) return;
+
+    const localTickets = this.getLocalTickets();
+    const ticketMap = new Map<string, ServerTicket>();
+
+    // Создаем карту существующих билетов
+    localTickets.forEach(ticket => {
+      if (ticket.ticket_id) {
+        ticketMap.set(ticket.ticket_id, ticket);
+      }
+    });
+
+    // Обновляем/добавляем новые билеты
+    updates.forEach(update => {
+      if (update.ticket_id) {
+        ticketMap.set(update.ticket_id as string, {
+          ...update,
+          synced_at: new Date().toISOString()
+        } as ServerTicket);
+      }
+    });
+
+    // Сохраняем обновленную базу
+    const updatedTickets = Array.from(ticketMap.values());
+    this.setLocalTickets(updatedTickets);
+
+    console.log(`Обновлено ${updates.length} билетов в локальной базе`);
   }
 
   // Добавление операции в очередь синхронизации
@@ -91,6 +133,11 @@ class SyncService {
       const syncResponse = await apiService.sync(syncRequest);
 
       if (syncResponse.success) {
+        // Обрабатываем обновления билетов с сервера
+        if (syncResponse.updates && syncResponse.updates.length > 0) {
+          this.updateLocalTickets(syncResponse.updates);
+        }
+
         // Очищаем успешно синхронизированные операции
         this.setPendingOperations([]);
 
@@ -142,6 +189,57 @@ class SyncService {
   // Получение количества ожидающих операций
   getPendingOperationsCount(): number {
     return this.getPendingOperations().length;
+  }
+
+  // Получение билета из локальной базы
+  getLocalTicket(ticketId: string): ServerTicket | null {
+    const tickets = this.getLocalTickets();
+    return tickets.find(ticket => ticket.ticket_id === ticketId) || null;
+  }
+
+  // Получение всех локальных билетов
+  getAllLocalTickets(): ServerTicket[] {
+    return this.getLocalTickets();
+  }
+
+  // Получение количества билетов в локальной базе
+  getLocalTicketsCount(): number {
+    return this.getLocalTickets().length;
+  }
+
+  // === МЕТОДЫ ДЛЯ ОТЛАДКИ ===
+
+  // Очистка всех данных синхронизации
+  clearAllSyncData() {
+    localStorage.removeItem('pending_operations');
+    localStorage.removeItem('last_sync_timestamp');
+    localStorage.removeItem('device_id');
+    localStorage.removeItem('local_tickets');
+    this.serverStatus.lastSync = null;
+    console.log('Все данные синхронизации очищены');
+  }
+
+  // Получение всех операций для отладки
+  debugGetAllOperations(): SyncOperation[] {
+    return this.getPendingOperations();
+  }
+
+  // Получение всех локальных билетов для отладки
+  debugGetAllTickets(): ServerTicket[] {
+    return this.getLocalTickets();
+  }
+
+  // Принудительная установка статуса сервера (для тестирования)
+  debugSetServerStatus(isOnline: boolean) {
+    this.serverStatus.isOnline = isOnline;
+    this.serverStatus.lastCheck = new Date().toISOString();
+    console.log(`Статус сервера принудительно установлен: ${isOnline ? 'онлайн' : 'офлайн'}`);
+  }
+
+  // Имитация получения updates с сервера (для тестирования)
+  debugAddTestTickets(tickets: Record<string, unknown>[]) {
+    this.updateLocalTickets(tickets);
+    console.log(`Добавлено ${tickets.length} тестовых билетов`);
   }
 }
 
