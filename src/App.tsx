@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, LogIn, LogOut } from 'lucide-react';
+import { Play, Pause, LogIn, LogOut, Plus } from 'lucide-react';
 import QRScanner from './components/QRScanner';
 import LoginModal from './components/LoginModal';
 import SyncStatus from './components/SyncStatus';
 import TicketEditor from './components/TicketEditor';
+import AddTicketForm from './components/AddTicketForm';
 import { syncService } from './services/sync';
 import { apiService } from './services/api';
 import type { User, TicketInfo } from './types/auth';
@@ -15,6 +16,8 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [autoRegistrationMessage, setAutoRegistrationMessage] = useState<string | null>(null);
+  const [isAddTicketFormOpen, setIsAddTicketFormOpen] = useState(false);
+  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
   // Проверяем наличие debug параметра в URL
   const isDebugMode = new URLSearchParams(window.location.search).has('debug');
@@ -92,12 +95,6 @@ function App() {
 
     setTicketInfo(finalTicketData || null);
     setAutoRegistrationMessage(message);
-    console.log('QR код отсканирован:', decodedText);
-
-    // Очищаем сообщение через 5 секунд
-    // if (message) {
-    //   setTimeout(() => setAutoRegistrationMessage(null), 5000);
-    // }
 
     // Добавляем операцию в очередь синхронизации
     syncService.addOperation({
@@ -146,6 +143,28 @@ function App() {
     setTicketInfo(updatedTicket);
   };
 
+  const handleCreateTicket = async (ticketData: { holder: string; type: string; comment: string }) => {
+    if (!user) {
+      alert('Требуется авторизация для создания билета');
+      return;
+    }
+
+    setIsCreatingTicket(true);
+    try {
+      const newTicket = await apiService.createTicket(ticketData);
+      setTicketInfo(newTicket);
+      setIsAddTicketFormOpen(false);
+      setAutoRegistrationMessage('Билет успешно создан!');
+      // Очищаем сообщение через 3 секунды
+      setTimeout(() => setAutoRegistrationMessage(null), 3000);
+    } catch (error) {
+      console.error('Ошибка создания билета:', error);
+      alert('Ошибка при создании билета. Попробуйте снова.');
+    } finally {
+      setIsCreatingTicket(false);
+    }
+  };
+
   return (
     <div style={{
       maxWidth: '400px',
@@ -175,23 +194,43 @@ function App() {
               <span style={{ fontSize: '14px' }}>
                 Привет, <strong>{user.username}</strong>
               </span>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <LogOut size={16} />
-                Выйти
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setIsAddTicketFormOpen(true)}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px'
+                  }}
+                >
+                  <Plus size={14} />
+                  Новый билет
+                </button>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <LogOut size={16} />
+                  Выйти
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -316,6 +355,14 @@ function App() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Форма создания билета */}
+      <AddTicketForm
+        isOpen={isAddTicketFormOpen}
+        onClose={() => setIsAddTicketFormOpen(false)}
+        onSubmit={handleCreateTicket}
+        isLoading={isCreatingTicket}
       />
     </div>
   );

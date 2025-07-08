@@ -14,7 +14,8 @@ export const API_CONFIG = {
     auth: '/user/auth',
     sync: '/qr/batch',
     changes: '/qr/changes',
-    ticket: '/qr/tickets'
+    ticket: '/qr/tickets',
+    createTicket: '/qr/tickets'
   }
 };
 

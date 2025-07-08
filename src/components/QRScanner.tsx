@@ -58,7 +58,6 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
       if (localTicket) {
         // Билет найден в локальной базе
         const ticketInfo = convertServerTicketToTicketInfo(localTicket);
-        console.log('Билет найден в локальной базе:', code);
         onScanSuccess(code, ticketInfo);
       } else {
         // Билет не найден локально, обращаемся к серверу

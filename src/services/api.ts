@@ -136,6 +136,17 @@ class ApiService {
       `${API_CONFIG.endpoints.ticket}/${ticketCode}`
     );
   }
+
+  // Создание нового билета
+  async createTicket(ticketData: { holder: string; type: string; comment: string }): Promise<TicketInfo> {
+    return this.request<TicketInfo>(
+      API_CONFIG.endpoints.createTicket || '/tickets',
+      {
+        method: 'POST',
+        body: JSON.stringify(ticketData),
+      }
+    );
+  }
 }
 
 export const apiService = new ApiService();

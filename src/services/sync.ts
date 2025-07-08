@@ -86,7 +86,6 @@ class SyncService {
         return false;
       }
 
-      console.log(`Сохранено ${tickets.length} билетов в локальную базу`);
       return true;
     } catch (error) {
       console.error('Ошибка сохранения в локальную базу:', error);
@@ -244,22 +243,8 @@ class SyncService {
 
   // Получение билета из локальной базы
   getLocalTicket(ticketId: string): ServerTicket | null {
-    // console.log(`Поиск билета в локальной базе: ${ticketId}`);
-
     const tickets = this.getLocalTickets();
-    // console.log(`Доступно билетов в локальной базе: ${tickets.length}`);
-
     const ticket = tickets.find(ticket => ticket.code === ticketId) || null;
-
-    // if (ticket) {
-    //   console.log(`Билет найден в локальной базе: ${ticketId}`);
-    // } else {
-    //   console.log(`Билет НЕ найден в локальной базе: ${ticketId}`);
-    //   // Выводим все доступные ticket_id для отладки
-    //   const availableIds = tickets.map(t => t.ticket_id).slice(0, 5);
-    //   console.log(`Первые 5 доступных ID: [${availableIds.join(', ')}]`);
-    // }
-
     return ticket;
   }
 
@@ -315,7 +300,6 @@ class SyncService {
         }
       });
 
-      console.log(`Билет отмечен как использованный: ${ticketCode}`);
       return true;
     }
 
