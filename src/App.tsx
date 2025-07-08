@@ -14,6 +14,9 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
+  // Проверяем наличие debug параметра в URL
+  const isDebugMode = new URLSearchParams(window.location.search).has('debug');
+
   useEffect(() => {
     // Запускаем автоматическую синхронизацию при загрузке
     syncService.startAutoSync();
@@ -84,6 +87,17 @@ function App() {
     apiService.logout();
     setUser(null);
     localStorage.removeItem('user_data');
+  };
+
+  const handleClearAllData = () => {
+    if (confirm('Вы уверены, что хотите очистить все локальные данные?')) {
+      syncService.clearAllSyncData();
+      apiService.logout();
+      setUser(null);
+      setTicketInfo(null);
+      localStorage.clear();
+      alert('Все данные очищены');
+    }
   };
 
   return (
@@ -160,8 +174,8 @@ function App() {
         </div>
       )}
 
-      {/* Отладочная информация (временно) */}
-      {!isScanning && (
+      {/* Отладочная информация (только с параметром ?debug) */}
+      {!isScanning && isDebugMode && (
         <div style={{
           backgroundColor: '#fff3cd',
           border: '1px solid #ffeaa7',
@@ -170,7 +184,23 @@ function App() {
           marginBottom: '10px',
           fontSize: '12px'
         }}>
-          <strong>DEBUG:</strong> Билетов в локальной БД: {syncService.getLocalTicketsCount()}
+          <div style={{ marginBottom: '8px' }}>
+            <strong>DEBUG:</strong> Билетов в локальной БД: {syncService.getLocalTicketsCount()}
+          </div>
+          <button
+            onClick={handleClearAllData}
+            style={{
+              padding: '4px 8px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              fontSize: '11px'
+            }}
+          >
+            Очистить все данные
+          </button>
         </div>
       )}
 
