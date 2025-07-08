@@ -8,6 +8,7 @@ COPY package*.json ./
 RUN npm ci && npm cache clean --force
 
 COPY . .
+ENV GENERATE_SOURCEMAP=false
 RUN npm run build
 
 # Production stage with OpenResty
