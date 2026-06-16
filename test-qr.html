@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Test</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #qr-reader {
+            width: 100%;
+            margin: 20px 0;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            background: #e6f3ff;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Scanner Test</h1>
+
+        <button id="startBtn" onclick="startScanner()">Запустить QR сканер</button>
+        <button id="stopBtn" onclick="stopScanner()" disabled>Остановить сканер</button>
+
+        <div id="status" class="status">Готов к запуску</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="result" class="success" style="display: none;"></div>
+
+        <div id="qr-reader"></div>
+    </div>
+
+    <script>
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showResult(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        async function checkCameraPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error('Camera permission error:', err);
+                if (err.name === 'NotAllowedError') {
+                    showError('Доступ к камере запрещен. Разрешите использование камеры.');
+                } else if (err.name === 'NotFoundError') {
+                    showError('Камера не найдена на устройстве.');
+                } else if (err.name === 'NotReadableError') {
+                    showError('Камера занята другим приложением.');
+                } else {
+                    showError('Ошибка доступа к камере: ' + err.message);
+                }
+                return false;
+            }
+        }
+
+        async function startScanner() {
+            updateStatus('Проверка разрешений камеры...');
+
+            const hasPermission = await checkCameraPermission();
+            if (!hasPermission) {
+                updateStatus('Нет доступа к камере');
+                return;
+            }
+
+            updateStatus('Запуск QR сканера...');
+
+            try {
+                const config = {
+                    fps: 10,
+                    qrbox: {
+                        width: Math.min(300, window.innerWidth - 80),
+                        height: Math.min(300, window.innerWidth - 80),
+                    },
+                    aspectRatio: 1.0,
+                    disableFlip: false,
+                    showTorchButtonIfSupported: true,
+                    showZoomSliderIfSupported: true,
+                    videoConstraints: {
+                        facingMode: 'environment'
+                    }
+                };
+
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader",
+                    config,
+                    false
+                );
+
+                html5QrcodeScanner.render(
+                    (decodedText, decodedResult) => {
+                        console.log('QR Code scanned:', decodedText);
+                        showResult(`QR код найден: ${decodedText}`);
+                    },
+                    (error) => {
+                        // Игнорируем обычные ошибки сканирования
+                        if (!error.includes('NotFoundException') && !error.includes('No QR code found')) {
+                            console.warn('QR Scanner error:', error);
+                        }
+                    }
+                );
+
+                isScanning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                updateStatus('QR сканер активен - наведите камеру на QR код');
+
+            } catch (error) {
+                console.error('Failed to start scanner:', error);
+                showError('Не удалось запустить сканер: ' + error.message);
+                updateStatus('Ошибка запуска сканера');
+            }
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner && isScanning) {
+                html5QrcodeScanner.clear()
+                    .then(() => {
+                        html5QrcodeScanner = null;
+                        isScanning = false;
+                        document.getElementById('startBtn').disabled = false;
+                        document.getElementById('stopBtn').disabled = true;
+                        updateStatus('QR сканер остановлен');
+                    })
+                    .catch(err => {
+                        console.error('Error stopping scanner:', err);
+                        showError('Ошибка остановки сканера');
+                    });
+            }
+        }
+
+        // Проверка поддержки камеры при загрузке страницы
+        window.addEventListener('load', () => {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError('Ваш браузер не поддерживает доступ к камере');
+                document.getElementById('startBtn').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

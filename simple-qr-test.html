@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Простой QR Сканер</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; }
+        #qr-reader { margin: 20px 0; }
+        .result {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Сканер</h1>
+
+    <button id="startBtn" onclick="startScanner()">Запустить сканер</button>
+    <button id="stopBtn" onclick="stopScanner()" style="display:none; background:#dc3545;">Остановить сканер</button>
+
+    <div id="qr-reader"></div>
+
+    <div id="result" class="result" style="display:none;">
+        <strong>Результат:</strong>
+        <div id="resultText"></div>
+    </div>
+
+    <script>
+        let scanner = null;
+
+        async function startScanner() {
+            try {
+                scanner = new Html5QrcodeScanner(
+                    "qr-reader",
+                    { fps: 10, qrbox: 250 },
+                    false
+                );
+
+                scanner.render(
+                    (decodedText) => {
+                        // QR код найден
+                        document.getElementById('resultText').textContent = decodedText;
+                        document.getElementById('result').style.display = 'block';
+                        console.log('QR код:', decodedText);
+                    },
+                    (error) => {
+                        // Игнорируем ошибки сканирования
+                    }
+                );
+
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'block';
+
+            } catch (error) {
+                alert('Ошибка запуска сканера: ' + error.message);
+            }
+        }
+
+        function stopScanner() {
+            if (scanner) {
+                scanner.clear();
+                scanner = null;
+                document.getElementById('startBtn').style.display = 'block';
+                document.getElementById('stopBtn').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+name: QR Verifier CI/CD
+
+on:
+    push:
+        branches:
+            - main
+            - dev
+
+jobs:
+    deploy-dev:
+        if: github.ref == 'refs/heads/dev'
+        runs-on: [self-hosted]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Deploy to Development
+              run: |
+                  docker compose -f dev/docker-compose.yml up -d --build
+
+    deploy-prod:
+        if: github.ref == 'refs/heads/main'
+        runs-on: [self-hosted]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Deploy to Production
+              run: |
+                  docker compose -f prod/docker-compose.yml up -d --build
+
+    cleanup:
+        needs: [deploy-prod]
+        runs-on: [self-hosted]
+        steps:
+            - name: Clean old Docker images
+              run: |
+                  docker image prune -f

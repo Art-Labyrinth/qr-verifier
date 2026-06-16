@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  qr-verifier:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: production
+    container_name: qr-verifier-app
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3066:8080
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ../docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+
+volumes:
+  nginx_logs:
+    driver: local

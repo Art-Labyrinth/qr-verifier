@@ -1,69 +1,86 @@
-# React + TypeScript + Vite
+# QR Verifier
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+QR код верификатор - простое веб-приложение для проверки и создания QR кодов.
 
-Currently, two official plugins are available:
+## Быстрый запуск
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### С Docker (рекомендуется)
 
-## Expanding the ESLint configuration
+```bash
+# Собрать и запустить приложение
+make start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Или напрямую через docker-compose
+docker compose up -d
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Остановить
+make stop
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Приложение будет доступно по адресу: http://localhost
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Для разработки
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Запуск dev окружения (порт 3000)
+make dev
+
+# Остановка dev окружения
+make dev-stop
 ```
+
+### Для продакшена
+
+```bash
+# Запуск production окружения (порт 80)
+make prod
+
+# Остановка production окружения
+make prod-stop
+```
+
+## Команды
+
+- `make help` - показать все доступные команды
+- `make build` - собрать Docker образ
+- `make clean` - очистить контейнеры и образы
+- `make logs` - показать логи
+
+## Архитектура
+
+Приложение состоит из:
+- **Frontend**: React + TypeScript + Vite
+- **Web Server**: OpenResty (nginx + Lua)
+- **Container**: Docker с multi-stage сборкой
+
+Статические файлы собираются во время сборки Docker образа и размещаются в OpenResty для высокопроизводительной отдачи.
+
+## Требования
+
+- Docker
+- Docker Compose
+- Make (опционально, для удобства)
+
+## Структура проекта
+
+```
+├── src/                 # Исходный код приложения
+├── public/              # Статические файлы
+├── docker/              # Docker конфигурация
+│   ├── nginx.conf       # Конфигурация OpenResty
+│   └── entrypoint.sh    # Скрипт запуска
+├── dev/                 # Dev окружение
+│   └── docker-compose.yml
+├── prod/                # Production окружение
+│   └── docker-compose.yml
+├── Dockerfile           # Основной Docker файл
+├── docker-compose.yml   # Основной compose файл
+└── Makefile             # Команды для управления
+```
+
+## Технологии
+
+- React 18 + TypeScript + Vite
+- OpenResty (nginx + Lua)
+- Docker multi-stage сборка
+- GitHub Actions CI/CD

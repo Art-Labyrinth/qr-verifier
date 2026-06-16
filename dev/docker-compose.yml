@@ -1,0 +1,19 @@
+name: al-dev
+
+services:
+  qr-verifier-dev:
+    build: ..
+    container_name: qr-verifier-dev
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3006:8080
+
+    volumes:
+      - ../docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+
+    networks:
+      - main
+
+networks:
+  main:
+    external: true
