@@ -7,9 +7,11 @@ interface TicketEditorProps {
   ticketInfo: TicketInfo;
   isAuthenticated: boolean;
   onUpdate: (updatedTicket: TicketInfo) => void;
+  // Исход проверки билета: true — прошла, false — не прошла, null — нет данных проверки.
+  verificationPassed?: boolean | null;
 }
 
-const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated, onUpdate }) => {
+const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated, onUpdate, verificationPassed }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     holder: ticketInfo.holder,
@@ -94,8 +96,9 @@ const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated
     <div style={{
       marginTop: '20px',
       padding: '15px',
-      backgroundColor: ticketInfo.status ? '#d4edda' : '#f8d7da',
-      border: '1px solid #c3e6cb',
+      // Красным выделяем только если проверка НЕ прошла; иначе блок нейтрально-зелёный.
+      backgroundColor: verificationPassed === false ? '#f8d7da' : '#d4edda',
+      border: `1px solid ${verificationPassed === false ? '#f5c6cb' : '#c3e6cb'}`,
       borderRadius: '5px'
     }}>
       <h3 style={{ margin: '0 0 10px 0' }}>Информация о билете:</h3>

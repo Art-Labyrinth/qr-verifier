@@ -11,7 +11,7 @@ export const API_CONFIG = {
 
   // Эндпоинты
   endpoints: {
-    auth: '/user/auth',
+    auth: '/users/auth',
     sync: '/qr/batch',
     changes: '/qr/changes',
     ticket: '/qr/tickets',

@@ -15,6 +15,9 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
   const [result, setResult] = useState<string>('');
   const [manualCode, setManualCode] = useState<string>('');
 
+  // Длина отформатированного кода с дефисами: PPP-NN-NNNN
+  const TICKET_CODE_LENGTH = 11;
+
   // Преобразование ServerTicket в TicketInfo
   const convertServerTicketToTicketInfo = useCallback((serverTicket: ServerTicket): TicketInfo => {
     return {
@@ -30,15 +33,15 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
     };
   }, []);
 
-  // Функция для форматирования кода (L-NNN-NNNN)
+  // Функция для форматирования кода (PPP-NN-NNNN, напр. GST-12-4567)
   const formatTicketCode = (value: string) => {
     // Удаляем все кроме букв и цифр
     const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
     if (cleaned.length === 0) return '';
-    if (cleaned.length <= 1) return cleaned;
-    if (cleaned.length <= 4) return `${cleaned[0]}-${cleaned.slice(1)}`;
-    return `${cleaned[0]}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 8)}`;
+    if (cleaned.length <= 3) return cleaned;                                   // префикс
+    if (cleaned.length <= 5) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5, 9)}`;
   };
 
   // Обработка ручного ввода кода
@@ -85,7 +88,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
   // Обработка ручной отправки кода
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (manualCode.length === 10) { // L-NNN-NNNN = 9 символов
+    if (manualCode.length === TICKET_CODE_LENGTH) { // PPP-NN-NNNN
       submitTicketCode(manualCode);
       setManualCode('');
     }
@@ -143,8 +146,8 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
             type="text"
             value={manualCode}
             onChange={handleManualCodeChange}
-            placeholder="A-123-4567"
-            maxLength={10}
+            placeholder="GST-12-4567"
+            maxLength={TICKET_CODE_LENGTH}
             style={{
               width: '100%',
               padding: '10px',
@@ -159,16 +162,16 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onStopScanning, is
         </div>
         <button
           type="submit"
-          disabled={manualCode.length !== 10}
+          disabled={manualCode.length !== TICKET_CODE_LENGTH}
           style={{
             width: '100%',
             padding: '10px',
             fontSize: '16px',
-            backgroundColor: manualCode.length === 10 ? '#28a745' : '#ccc',
+            backgroundColor: manualCode.length === TICKET_CODE_LENGTH ? '#28a745' : '#ccc',
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            cursor: manualCode.length === 10 ? 'pointer' : 'not-allowed'
+            cursor: manualCode.length === TICKET_CODE_LENGTH ? 'pointer' : 'not-allowed'
           }}
         >
           Проверить код

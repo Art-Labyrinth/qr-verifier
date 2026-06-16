@@ -5,15 +5,17 @@ import type { ServerStatus } from '../types/auth';
 
 const SyncStatus: React.FC = () => {
   const [status, setStatus] = useState<ServerStatus>(syncService.getServerStatus());
-  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(syncService.getPendingOperationsCount());
 
   useEffect(() => {
-    // Обновляем статус каждые 5 секунд
-    const interval = setInterval(() => {
+    // Обновляем статус сразу и затем каждые 5 секунд
+    const update = () => {
       setStatus(syncService.getServerStatus());
       setPendingCount(syncService.getPendingOperationsCount());
-    }, 5000);
+    };
+    update();
 
+    const interval = setInterval(update, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,6 +41,10 @@ const SyncStatus: React.FC = () => {
     setStatus(syncService.getServerStatus());
     setPendingCount(syncService.getPendingOperationsCount());
   };
+
+  // Блок нужен только когда есть несинхронизированные билеты в очереди
+  // (билет просканирован, но статус ещё не загружен на сервер).
+  if (pendingCount === 0) return null;
 
   return (
     <div style={{

@@ -258,6 +258,38 @@ class SyncService {
     return this.getLocalTickets().length;
   }
 
+  // Сводная статистика по локальной базе (для дебаг-панели)
+  getTicketStats(): {
+    total: number;
+    used: number;
+    unused: number;
+    byPrefix: Record<string, number>;
+    pendingOperations: number;
+    isOnline: boolean;
+    lastSync: string | null;
+  } {
+    const tickets = this.getLocalTickets();
+    const byPrefix: Record<string, number> = {};
+    let used = 0;
+
+    for (const ticket of tickets) {
+      // Префикс — часть кода до первого дефиса (GST-12-4567 → GST)
+      const prefix = (ticket.code?.split('-')[0] || '—').toUpperCase();
+      byPrefix[prefix] = (byPrefix[prefix] || 0) + 1;
+      if (ticket.used) used++;
+    }
+
+    return {
+      total: tickets.length,
+      used,
+      unused: tickets.length - used,
+      byPrefix,
+      pendingOperations: this.getPendingOperationsCount(),
+      isOnline: this.serverStatus.isOnline,
+      lastSync: this.serverStatus.lastSync
+    };
+  }
+
   // Отметка билета как использованный (только для авторизованных пользователей)
   markTicketAsUsed(ticketCode: string, comment?: string): boolean {
     const isAuthenticated = !!localStorage.getItem('auth_token');

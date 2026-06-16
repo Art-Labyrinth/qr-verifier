@@ -14,6 +14,9 @@ services:
       - ./logs/nginx:/var/log/nginx
       - ./docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
 
-volumes:
-  nginx_logs:
-    driver: local
+    networks:
+      - main
+
+networks:
+  main:
+    external: true

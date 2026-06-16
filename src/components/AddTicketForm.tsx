@@ -9,20 +9,20 @@ interface AddTicketFormProps {
 }
 
 const ticketTypes = {
-  'G': 'Гость',
-  'M': 'Мастер',
-  'V': 'Волонтер',
-  'O': 'Организатор',
-  'S': 'Семейный',
-  'F': 'Друзья',
-  'L': 'Льготный',
-  'C': 'Гость'
+  'GST': 'Гость',
+  'MST': 'Мастер',
+  'VLR': 'Волонтёр',
+  'ORG': 'Организатор',
+  'FML': 'Семейный',
+  'FRD': 'Друзья',
+  'CSH': 'Наличные',
+  'DSC': 'Льготный'
 };
 
 const AddTicketForm: React.FC<AddTicketFormProps> = ({ isOpen, onClose, onSubmit, isLoading }) => {
   const [formData, setFormData] = useState({
     holder: '',
-    type: 'G',
+    type: 'CSH',
     comment: ''
   });
 
@@ -34,7 +34,7 @@ const AddTicketForm: React.FC<AddTicketFormProps> = ({ isOpen, onClose, onSubmit
   };
 
   const handleClose = () => {
-    setFormData({ holder: '', type: 'G', comment: '' });
+    setFormData({ holder: '', type: 'CSH', comment: '' });
     onClose();
   };
 

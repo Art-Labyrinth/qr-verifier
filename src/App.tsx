@@ -5,22 +5,31 @@ import LoginModal from './components/LoginModal';
 import SyncStatus from './components/SyncStatus';
 import TicketEditor from './components/TicketEditor';
 import AddTicketForm from './components/AddTicketForm';
+import DebugPanel from './components/DebugPanel';
 import { syncService } from './services/sync';
 import { apiService } from './services/api';
 import type { User, TicketInfo } from './types/auth';
 import './App.css';
 
+// Билет проходит проверку (зелёный блок), если он активен, оплачен и ещё НЕ использован.
+// Проверяем оригинальные данные билета — до авто-регистрации, поэтому `used` здесь
+// означает «был использован ДО текущего сканирования».
+const isTicketCheckPassed = (ticket: TicketInfo): boolean =>
+  ticket.active && ticket.is_sold && !ticket.used;
+
 function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
+  const [verificationPassed, setVerificationPassed] = useState<boolean | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [autoRegistrationMessage, setAutoRegistrationMessage] = useState<string | null>(null);
   const [isAddTicketFormOpen, setIsAddTicketFormOpen] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
-  // Проверяем наличие debug параметра в URL
-  const isDebugMode = new URLSearchParams(window.location.search).has('debug');
+  // Проверяем наличие debug параметра в URL (поддерживаем ?debug и ?DEBUG)
+  const debugParams = new URLSearchParams(window.location.search);
+  const isDebugMode = debugParams.has('debug') || debugParams.has('DEBUG');
 
   useEffect(() => {
     // Запускаем автоматическую синхронизацию при загрузке
@@ -61,6 +70,9 @@ function App() {
   const handleScanSuccess = (decodedText: string, ticketData?: TicketInfo) => {
     let finalTicketData = ticketData;
     let message: string | null = null;
+
+    // Исход проверки считаем по исходным данным билета (до авто-регистрации)
+    setVerificationPassed(ticketData ? isTicketCheckPassed(ticketData) : null);
 
     // Если пользователь авторизован и билет найден, проверяем возможность автоматической регистрации
     if (user && ticketData) {
@@ -153,6 +165,7 @@ function App() {
     try {
       const newTicket = await apiService.createTicket(ticketData);
       setTicketInfo(newTicket);
+      setVerificationPassed(isTicketCheckPassed(newTicket));
       setIsAddTicketFormOpen(false);
       setAutoRegistrationMessage('Билет успешно создан!');
       // Очищаем сообщение через 3 секунды
@@ -259,34 +272,9 @@ function App() {
         </div>
       )}
 
-      {/* Отладочная информация (только с параметром ?debug) */}
-      {!isScanning && isDebugMode && (
-        <div style={{
-          backgroundColor: '#fff3cd',
-          border: '1px solid #ffeaa7',
-          borderRadius: '5px',
-          padding: '10px',
-          marginBottom: '10px',
-          fontSize: '12px'
-        }}>
-          <div style={{ marginBottom: '8px' }}>
-            <strong>DEBUG:</strong> Билетов в локальной БД: {syncService.getLocalTicketsCount()}
-          </div>
-          <button
-            onClick={handleClearAllData}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer',
-              fontSize: '11px'
-            }}
-          >
-            Очистить все данные
-          </button>
-        </div>
+      {/* Техническая информация (только после авторизации и с параметром ?DEBUG) */}
+      {!isScanning && isDebugMode && user && (
+        <DebugPanel onClearData={handleClearAllData} />
       )}
 
       {/* Кнопка сканирования */}
@@ -347,6 +335,7 @@ function App() {
           ticketInfo={ticketInfo}
           isAuthenticated={!!user}
           onUpdate={handleTicketUpdate}
+          verificationPassed={verificationPassed}
         />
       )}
 
