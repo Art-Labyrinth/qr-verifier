@@ -3,6 +3,13 @@ import { X, Check, Edit } from 'lucide-react';
 import { syncService } from '../services/sync';
 import type { TicketInfo, ServerTicket } from '../types/auth';
 
+// Тестовый билет: двузначное число в коде (PPP-NN-NNNN) меньше 10, кроме 07.
+// «Меньше 10» для двузначного сегмента == ведущий ноль (/^0\d$/).
+const isTestTicket = (code: string): boolean => {
+  const segment = code.split('-')[1] || '';
+  return /^0\d$/.test(segment) && segment !== '07';
+};
+
 interface TicketEditorProps {
   ticketInfo: TicketInfo;
   isAuthenticated: boolean;
@@ -21,33 +28,7 @@ const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleUnmarkAsUsed = () => {
-    if (!isAuthenticated) {
-      alert('Требуется авторизация для отмены регистрации');
-      return;
-    }
-
-    if (!ticketInfo.used) {
-      alert('Билет не отмечен как использованный');
-      return;
-    }
-
-    setIsUpdating(true);
-    const success = syncService.unmarkTicketAsUsed(ticketInfo.code);
-
-    if (success) {
-    // Обновляем локальное состояние
-    const updatedTicket: TicketInfo = {
-        ...ticketInfo,
-        status: true,
-        used: null
-    };
-    onUpdate(updatedTicket);
-    } else {
-    alert('Ошибка при отмене регистрации билета');
-    }
-    setIsUpdating(false);
-  };  const handleSaveChanges = () => {
+  const handleSaveChanges = () => {
     if (!isAuthenticated) {
       alert('Требуется авторизация для редактирования');
       return;
@@ -101,6 +82,22 @@ const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated
       border: `1px solid ${verificationPassed === false ? '#f5c6cb' : '#c3e6cb'}`,
       borderRadius: '5px'
     }}>
+      {isTestTicket(ticketInfo.code) && (
+        <div style={{
+          backgroundColor: '#ff9800',
+          color: '#000',
+          fontWeight: 'bold',
+          fontSize: '15px',
+          textAlign: 'center',
+          padding: '10px',
+          borderRadius: '4px',
+          marginBottom: '12px',
+          border: '2px solid #e65100'
+        }}>
+          ⚠️ ТЕСТОВЫЙ БИЛЕТ
+        </div>
+      )}
+
       <h3 style={{ margin: '0 0 10px 0' }}>Информация о билете:</h3>
 
       <div style={{
@@ -273,77 +270,55 @@ const TicketEditor: React.FC<TicketEditorProps> = ({ ticketInfo, isAuthenticated
         </div>
       </div>
 
-      {/* Кнопки действий */}
-      {isAuthenticated && (
+      {/* Кнопки действий (только в режиме редактирования) */}
+      {isAuthenticated && isEditing && (
         <div style={{ borderTop: '1px solid #ccc', paddingTop: '10px' }}>
-          {isEditing ? (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={handleSaveChanges}
-                disabled={isUpdating}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  backgroundColor: isUpdating ? '#6c757d' : '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <Check size={16} />
-                {isUpdating ? 'Сохранение...' : 'Сохранить изменения'}
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                disabled={isUpdating}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <X size={16} />
-                Отмена
-              </button>
-            </div>
-          ) : (
-            ticketInfo.used && (
-              <button
-                onClick={handleUnmarkAsUsed}
-                disabled={isUpdating}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: isUpdating ? '#6c757d' : '#ffc107',
-                  color: isUpdating ? 'white' : '#000',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
-                }}
-              >
-                {isUpdating ? 'Обработка...' : 'Отменить регистрацию'}
-              </button>
-            )
-          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleSaveChanges}
+              disabled={isUpdating}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: isUpdating ? '#6c757d' : '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isUpdating ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              <Check size={16} />
+              {isUpdating ? 'Сохранение...' : 'Сохранить изменения'}
+            </button>
+            <button
+              onClick={handleCancelEdit}
+              disabled={isUpdating}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isUpdating ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              <X size={16} />
+              Отмена
+            </button>
+          </div>
         </div>
       )}
     </div>
